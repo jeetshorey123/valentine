@@ -1,14 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
-import sys
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import supabase
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
 
-# Import supabase after path is set
-from supabase import create_client, Client
-
-# Initialize Flask app with absolute paths
+# Initialize Flask app - MUST be at module level for Vercel
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'valentine-secret-key-2026')
 
@@ -17,8 +17,12 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 
 # Only create supabase client if credentials are provided
-if supabase_url and supabase_key:
-    supabase: Client = create_client(supabase_url, supabase_key)
+if SUPABASE_AVAILABLE and supabase_url and supabase_key:
+    try:
+        supabase: Client = create_client(supabase_url, supabase_key)
+    except Exception as e:
+        print(f"Supabase initialization error: {e}")
+        supabase = None
 else:
     supabase = None
 
@@ -79,14 +83,12 @@ def submit():
         return render_template('thank_you.html', name=name, error=True)
 
 
-# Health check endpoint
 @app.route('/api/health')
 def health():
+    """Health check endpoint for Vercel"""
     return {'status': 'ok', 'message': 'Valentine app is running'}
 
 
-# For Vercel serverless
-if __name__ != '__main__':
-    # This is the WSGI application Vercel will use
-    application = app
+# No app.run() needed - Vercel handles this
+
 

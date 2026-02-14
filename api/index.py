@@ -46,7 +46,7 @@ def valentine():
 
 @app.route('/response', methods=['POST'])
 def response():
-    """Handle Yes/No response"""
+    """Handle Yes/No response and save to Supabase immediately"""
     answer = request.form.get('answer')
     name = session.get('name')
     
@@ -54,32 +54,63 @@ def response():
         return redirect(url_for('index'))
     
     session['answer'] = answer
-    return render_template('review.html', name=name)
+    saved = False
+    error_msg = None
+    
+    # Save to Supabase immediately when Yes is clicked
+    try:
+        if supabase:
+            data = {
+                'name': name,
+                'response': answer,
+                'review': ''  # Empty review for now
+            }
+            result = supabase.table('valentines').insert(data).execute()
+            if result.data and len(result.data) > 0:
+                session['record_id'] = result.data[0]['id']
+                saved = True
+        else:
+            error_msg = "Database not connected"
+    except Exception as e:
+        print(f"Error saving to database: {e}")
+        error_msg = str(e)
+    
+    return render_template('review.html', name=name, saved=saved, error_msg=error_msg)
 
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    """Submit review and save to Supabase"""
+    """Update review in Supabase"""
     review = request.form.get('review', '')
     name = session.get('name')
     answer = session.get('answer')
+    record_id = session.get('record_id')
     
     if not name or not answer:
         return redirect(url_for('index'))
     
-    # Save to Supabase
+    # Update the review in existing Supabase record
+    updated = False
+    error_msg = None
+    
     try:
-        if supabase:
+        if supabase and record_id:
+            result = supabase.table('valentines').update({'review': review}).eq('id', record_id).execute()
+            updated = True
+        elif supabase and not record_id:
+            # Fallback: insert if record_id missing
             data = {
                 'name': name,
                 'response': answer,
                 'review': review
             }
             result = supabase.table('valentines').insert(data).execute()
-        return render_template('thank_you.html', name=name)
+            updated = True
     except Exception as e:
-        print(f"Error saving to database: {e}")
-        return render_template('thank_you.html', name=name, error=True)
+        print(f"Error updating database: {e}")
+        error_msg = str(e)
+    
+    return render_template('thank_you.html', name=name, updated=updated, error_msg=error_msg)
 
 
 @app.route('/api/health')

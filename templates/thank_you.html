@@ -9,13 +9,17 @@
 <body>
     <div class="container">
         <div class="card">
-            {% if error %}
+            {% if error_msg %}
             <h1>⚠️ Oops!</h1>
-            <p>There was an error saving your response, but thank you anyway, {{ name }}! 💕</p>
+            <p>There was an error updating your message: {{ error_msg }}</p>
+            <p>But thank you anyway, {{ name }}! 💕</p>
+            {% elif updated %}
+            <h1>✨ All Set! ✨</h1>
+            <p>Thank you so much, {{ name }}! 💖</p>
+            <p class="subtitle">✅ Your message has been saved to the database!</p>
             {% else %}
             <h1>✨ All Set! ✨</h1>
             <p>Thank you so much, {{ name }}! 💖</p>
-            <p class="subtitle">Your response has been saved!</p>
             {% endif %}
             
             <div class="hearts">

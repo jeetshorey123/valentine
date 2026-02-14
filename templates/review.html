@@ -13,6 +13,16 @@
             <h2>Thank you, {{ name }}! 💖</h2>
             <p class="subtitle">I'm so happy you said yes!</p>
             
+            {% if saved %}
+            <div class="success-message">
+                ✅ Your response has been saved to the database!
+            </div>
+            {% elif error_msg %}
+            <div class="error-message">
+                ⚠️ Could not save to database: {{ error_msg }}
+            </div>
+            {% endif %}
+            
             <form action="/submit" method="POST">
                 <div class="form-group">
                     <label for="review">Would you like to leave a sweet message?</label>

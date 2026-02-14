@@ -1,14 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
+import sys
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import supabase after path is set
 from supabase import create_client, Client
 
-app = Flask(__name__, template_folder='../templates', static_folder='../static')
+# Initialize Flask app with absolute paths
+app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'valentine-secret-key-2026')
 
 # Supabase configuration
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
-supabase: Client = create_client(supabase_url, supabase_key)
+
+# Only create supabase client if credentials are provided
+if supabase_url and supabase_key:
+    supabase: Client = create_client(supabase_url, supabase_key)
+else:
+    supabase = None
 
 
 @app.route('/')
@@ -54,18 +66,27 @@ def submit():
     
     # Save to Supabase
     try:
-        data = {
-            'name': name,
-            'response': answer,
-            'review': review
-        }
-        result = supabase.table('valentines').insert(data).execute()
+        if supabase:
+            data = {
+                'name': name,
+                'response': answer,
+                'review': review
+            }
+            result = supabase.table('valentines').insert(data).execute()
         return render_template('thank_you.html', name=name)
     except Exception as e:
         print(f"Error saving to database: {e}")
         return render_template('thank_you.html', name=name, error=True)
 
 
-# This is required for Vercel
-if __name__ == '__main__':
-    app.run(debug=True)
+# Health check endpoint
+@app.route('/api/health')
+def health():
+    return {'status': 'ok', 'message': 'Valentine app is running'}
+
+
+# For Vercel serverless
+if __name__ != '__main__':
+    # This is the WSGI application Vercel will use
+    application = app
+

@@ -36,6 +36,14 @@ FOR SELECT
 TO anon
 USING (true);
 
+-- Allow anonymous users (anon role) to UPDATE
+CREATE POLICY "anon_update_policy"
+ON valentines
+FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
 -- Allow authenticated users to do everything (optional)
 CREATE POLICY "authenticated_all_policy"
 ON valentines

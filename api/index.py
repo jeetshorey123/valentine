@@ -17,12 +17,18 @@ try:
     supabase_url = os.environ.get('SUPABASE_URL')
     supabase_key = os.environ.get('SUPABASE_KEY')
     
+    # Debug: Print environment variable status (without exposing full values)
+    print(f"SUPABASE_URL present: {bool(supabase_url)}")
+    print(f"SUPABASE_KEY present: {bool(supabase_key)}")
+    
     if supabase_url and supabase_key:
         supabase = create_client(supabase_url, supabase_key)
+        print("✅ Supabase client created successfully")
     else:
         supabase = None
+        print("❌ Supabase environment variables missing")
 except Exception as e:
-    print(f"Supabase error: {e}")
+    print(f"❌ Supabase initialization error: {e}")
     supabase = None
 
 
@@ -116,4 +122,13 @@ def submit():
 @app.route('/api/health')
 def health():
     """Health check endpoint"""
-    return {'status': 'ok', 'message': 'Valentine app is running'}
+    return {
+        'status': 'ok', 
+        'message': 'Valentine app is running',
+        'supabase_connected': supabase is not None,
+        'env_vars': {
+            'SECRET_KEY': bool(os.environ.get('SECRET_KEY')),
+            'SUPABASE_URL': bool(os.environ.get('SUPABASE_URL')),
+            'SUPABASE_KEY': bool(os.environ.get('SUPABASE_KEY'))
+        }
+    }

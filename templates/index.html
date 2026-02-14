@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Day 💕</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>💕 Happy Valentine's Day! 💕</h1>
+            <p class="subtitle">Before we begin...</p>
+            
+            <form action="/valentine" method="POST">
+                <div class="form-group">
+                    <label for="name">What's your name?</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your name" autofocus>
+                </div>
+                <button type="submit" class="btn-primary">Continue ❤️</button>
+            </form>
+            <div class="footer">
+                Made with 💖 by <a href="#">Jeet</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

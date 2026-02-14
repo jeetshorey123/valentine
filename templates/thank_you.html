@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Set! 💕</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            {% if error %}
+            <h1>⚠️ Oops!</h1>
+            <p>There was an error saving your response, but thank you anyway, {{ name }}! 💕</p>
+            {% else %}
+            <h1>✨ All Set! ✨</h1>
+            <p>Thank you so much, {{ name }}! 💖</p>
+            <p class="subtitle">Your response has been saved!</p>
+            {% endif %}
+            
+            <div class="hearts">
+                <span>💕</span>
+                <span>💖</span>
+                <span>💗</span>
+                <span>💓</span>
+                <span>💝</span>
+            </div>
+            
+            <a href="/" class="btn-primary">Start Over</a>
+            <div class="footer">
+                Made with 💖 by <a href="#">Jeet</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

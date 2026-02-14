@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 💕</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>{{ name }},</h1>
+            <h2>Will You Be My Valentine? 💖</h2>
+            
+            <form action="/response" method="POST" id="valentine-form">
+                <div class="button-group">
+                    <button type="submit" name="answer" value="yes" class="btn-yes">
+                        Yes! 💕
+                    </button>
+                    <button type="button" id="no-btn" class="btn-no">
+                        No
+                    </button>
+                </div>
+            </form>
+            <div class="footer">
+                Made with 💖 by <a href="#">Jeet</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('no-btn');
+        const container = document.querySelector('.container');
+        
+        // Function to move button slightly in random direction
+        function moveButtonAway() {
+            const currentRect = noBtn.getBoundingClientRect();
+            
+            // Move 60-120 pixels in a random direction
+            const distance = 60 + Math.random() * 60;
+            const angle = Math.random() * 2 * Math.PI; // Random angle
+            
+            const deltaX = Math.cos(angle) * distance;
+            const deltaY = Math.sin(angle) * distance;
+            
+            let newLeft = currentRect.left + deltaX;
+            let newTop = currentRect.top + deltaY;
+            
+            // Keep button within viewport with some padding
+            const padding = 20;
+            newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - noBtn.offsetWidth - padding));
+            newTop = Math.max(padding, Math.min(newTop, window.innerHeight - noBtn.offsetHeight - padding));
+            
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = newLeft + 'px';
+            noBtn.style.top = newTop + 'px';
+            noBtn.style.transition = 'all 0.3s ease';
+        }
+        
+        noBtn.addEventListener('mouseover', moveButtonAway);
+        
+        noBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Move away on click attempt too
+            moveButtonAway();
+        });
+    </script>
+</body>
+</html>

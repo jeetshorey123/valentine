@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
 from pathlib import Path
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from urllib.parse import urlparse
 
 # Get the base directory (parent of 'api' folder)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,25 +14,21 @@ app = Flask(__name__,
             static_folder=str(BASE_DIR / 'static'))
 app.secret_key = os.environ.get('SECRET_KEY', 'valentine-secret-key-2026')
 
-# Import and initialize Supabase
-try:
-    from supabase import create_client, Client
-    supabase_url = os.environ.get('SUPABASE_URL')
-    supabase_key = os.environ.get('SUPABASE_KEY')
-    
-    # Debug: Print environment variable status (without exposing full values)
-    print(f"SUPABASE_URL present: {bool(supabase_url)}")
-    print(f"SUPABASE_KEY present: {bool(supabase_key)}")
-    
-    if supabase_url and supabase_key:
-        supabase = create_client(supabase_url, supabase_key)
-        print("✅ Supabase client created successfully")
-    else:
-        supabase = None
-        print("❌ Supabase environment variables missing")
-except Exception as e:
-    print(f"❌ Supabase initialization error: {e}")
-    supabase = None
+# Database connection function
+def get_db_connection():
+    """Create a database connection to Neon PostgreSQL"""
+    try:
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            print("❌ DATABASE_URL environment variable missing")
+            return None
+        
+        conn = psycopg2.connect(database_url)
+        print("✅ Neon PostgreSQL connected successfully")
+        return conn
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        return None
 
 
 @app.route('/')
@@ -52,7 +51,7 @@ def valentine():
 
 @app.route('/response', methods=['POST'])
 def response():
-    """Handle Yes/No response and save to Supabase immediately"""
+    """Handle Yes/No response and save to database immediately"""
     answer = request.form.get('answer')
     name = session.get('name')
     
@@ -63,18 +62,24 @@ def response():
     saved = False
     error_msg = None
     
-    # Save to Supabase immediately when Yes is clicked
+    # Save to Neon PostgreSQL immediately when Yes is clicked
     try:
-        if supabase:
-            data = {
-                'name': name,
-                'response': answer,
-                'review': ''  # Empty review for now
-            }
-            result = supabase.table('valentines').insert(data).execute()
-            if result.data and len(result.data) > 0:
-                session['record_id'] = result.data[0]['id']
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                "INSERT INTO valentines (name, response, review) VALUES (%s, %s, %s) RETURNING id",
+                (name, answer, '')
+            )
+            result = cursor.fetchone()
+            conn.commit()
+            
+            if result:
+                session['record_id'] = result['id']
                 saved = True
+            
+            cursor.close()
+            conn.close()
         else:
             error_msg = "Database not connected"
     except Exception as e:
@@ -86,7 +91,7 @@ def response():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    """Update review in Supabase"""
+    """Update review in database"""
     review = request.form.get('review', '')
     name = session.get('name')
     answer = session.get('answer')
@@ -95,23 +100,32 @@ def submit():
     if not name or not answer:
         return redirect(url_for('index'))
     
-    # Update the review in existing Supabase record
+    # Update the review in existing database record
     updated = False
     error_msg = None
     
     try:
-        if supabase and record_id:
-            result = supabase.table('valentines').update({'review': review}).eq('id', record_id).execute()
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            
+            if record_id:
+                # Update existing record
+                cursor.execute(
+                    "UPDATE valentines SET review = %s WHERE id = %s",
+                    (review, record_id)
+                )
+            else:
+                # Fallback: insert if record_id missing
+                cursor.execute(
+                    "INSERT INTO valentines (name, response, review) VALUES (%s, %s, %s)",
+                    (name, answer, review)
+                )
+            
+            conn.commit()
             updated = True
-        elif supabase and not record_id:
-            # Fallback: insert if record_id missing
-            data = {
-                'name': name,
-                'response': answer,
-                'review': review
-            }
-            result = supabase.table('valentines').insert(data).execute()
-            updated = True
+            cursor.close()
+            conn.close()
     except Exception as e:
         print(f"Error updating database: {e}")
         error_msg = str(e)
@@ -122,13 +136,21 @@ def submit():
 @app.route('/api/health')
 def health():
     """Health check endpoint"""
+    db_connected = False
+    try:
+        conn = get_db_connection()
+        if conn:
+            db_connected = True
+            conn.close()
+    except:
+        db_connected = False
+    
     return {
         'status': 'ok', 
-        'message': 'Valentine app is running',
-        'supabase_connected': supabase is not None,
+        'message': 'Valentine app is running with Neon PostgreSQL',
+        'database_connected': db_connected,
         'env_vars': {
             'SECRET_KEY': bool(os.environ.get('SECRET_KEY')),
-            'SUPABASE_URL': bool(os.environ.get('SUPABASE_URL')),
-            'SUPABASE_KEY': bool(os.environ.get('SUPABASE_KEY'))
+            'DATABASE_URL': bool(os.environ.get('DATABASE_URL'))
         }
     }

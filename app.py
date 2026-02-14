@@ -24,6 +24,41 @@ def get_db_connection():
         print(f"❌ Database connection error: {e}")
         return None
 
+def init_database():
+    """Create tables if they don't exist"""
+    try:
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            
+            # Create valentines table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS valentines (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    response TEXT NOT NULL,
+                    review TEXT,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Create indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_valentines_created_at 
+                ON valentines(created_at DESC)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_valentines_name 
+                ON valentines(name)
+            """)
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("✅ Database tables initialized successfully")
+    except Exception as e:
+        print(f"⚠️ Database initialization error: {e}")
+
 
 @app.route('/')
 def index():
@@ -128,4 +163,6 @@ def submit():
 
 
 if __name__ == '__main__':
+    # Initialize database tables on startup
+    init_database()
     app.run(debug=True, host='0.0.0.0', port=5000)

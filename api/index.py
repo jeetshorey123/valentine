@@ -30,6 +30,46 @@ def get_db_connection():
         print(f"❌ Database connection error: {e}")
         return None
 
+def init_database():
+    """Create tables if they don't exist - runs automatically"""
+    try:
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            
+            # Create valentines table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS valentines (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    response TEXT NOT NULL,
+                    review TEXT,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Create indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_valentines_created_at 
+                ON valentines(created_at DESC)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_valentines_name 
+                ON valentines(name)
+            """)
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("✅ Database tables initialized successfully")
+            return True
+    except Exception as e:
+        print(f"⚠️ Database initialization error: {e}")
+        return False
+
+# Initialize database on module load (for Vercel)
+init_database()
+
 
 @app.route('/')
 def index():

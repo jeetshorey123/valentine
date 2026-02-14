@@ -30,23 +30,25 @@
 
     <script>
         const noBtn = document.getElementById('no-btn');
-        const container = document.querySelector('.container');
+        const yesBtn = document.querySelector('.btn-yes');
         
-        // Function to move button slightly in random direction
+        // Function to move button slightly near Yes button
         function moveButtonAway() {
-            const currentRect = noBtn.getBoundingClientRect();
+            // Get Yes button position
+            const yesRect = yesBtn.getBoundingClientRect();
             
-            // Move 60-120 pixels in a random direction
-            const distance = 60 + Math.random() * 60;
+            // Move No button to random position near Yes button (within 150px radius)
+            const distance = 40 + Math.random() * 110; // 40-150 pixels from Yes button
             const angle = Math.random() * 2 * Math.PI; // Random angle
             
             const deltaX = Math.cos(angle) * distance;
             const deltaY = Math.sin(angle) * distance;
             
-            let newLeft = currentRect.left + deltaX;
-            let newTop = currentRect.top + deltaY;
+            // Position relative to Yes button center
+            let newLeft = yesRect.left + (yesRect.width / 2) + deltaX - (noBtn.offsetWidth / 2);
+            let newTop = yesRect.top + (yesRect.height / 2) + deltaY - (noBtn.offsetHeight / 2);
             
-            // Keep button within viewport with some padding
+            // Keep button within viewport with padding
             const padding = 20;
             newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - noBtn.offsetWidth - padding));
             newTop = Math.max(padding, Math.min(newTop, window.innerHeight - noBtn.offsetHeight - padding));

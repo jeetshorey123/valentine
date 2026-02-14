@@ -1,8 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
+from pathlib import Path
+
+# Get the base directory (parent of 'api' folder)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize Flask app - MUST be at module level for Vercel
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder=str(BASE_DIR / 'templates'),
+            static_folder=str(BASE_DIR / 'static'))
 app.secret_key = os.environ.get('SECRET_KEY', 'valentine-secret-key-2026')
 
 # Import and initialize Supabase
